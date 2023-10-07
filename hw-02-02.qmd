@@ -103,6 +103,8 @@ demographics |>
            plot_outlier()
 ```
 
+These above shown Box plots showcases the distribution of outliers in selected columns of the '**`demographics`**' dataset, highlighting potential data points that deviate significantly from the norm.
+
 ## Basic Exploration of Missing Values (NAs)
 
 We will now generate a new dataset, **na.demographics**, by introducing missing values (NAs) randomly into the **demographics** dataset with a probability of 30%.
@@ -136,6 +138,8 @@ na.demographics |>
   plot_na_pareto(only_na = TRUE)
 ```
 
+Above is the pareto plot illustrating the distribution of missing data across columns in the '**`na.demographics`**' dataset, providing a visual representation of the extent and impact of missing values.
+
 ## Advance Exploration of Missing Values
 
 Now we will generate a plot that visualizes the intersections of missing values in the '**covered**', '**employment**', and '**year**' columns of the '**na.demographics**' dataset. It shows which combinations of these columns have missing values in the same rows.
@@ -145,6 +149,8 @@ na.demographics |>
   select(covered, employment, year) |>
   plot_na_intersect(only_na = TRUE)
 ```
+
+Above shown is the intersection plot displaying combinations of missing values within the '**`covered`**,' '**`employment`**,' and '**`year`**' columns of the **`'na.demographics`**' dataset, highlighting which rows share missing data in these specific columns
 
 -   Intersect plot that shows, for every combination of columns relevant, how many missing values are common
 
@@ -171,6 +177,8 @@ na.demographics |>
  ggplotly() 
 ```
 
+Interactive Plotly visualization of missing data patterns within the '**`covered`**,' '**`employment`**,' and '**`year`**' columns of the '**`na.demographics`**' dataset, enabling in-depth exploration of missing values in each row.
+
 ## Impute Outliers and NAs
 
 Imputing outliers typically involves replacing extreme or unusual data points with more typical values to reduce their impact on statistical analysis. Imputing missing values (NAs) is the process of filling in or estimating data points that are missing or undefined to maintain data completeness for analysis.
@@ -192,6 +200,8 @@ demographics %>%
   ylab("p_members") + 
   theme(legend.position = "none")  
 ```
+
+Box plot visualizing the relationship between '**`p_covered`**' and '**`p_members`**' columns.
 
 ### Mean Inputation
 
@@ -219,6 +229,8 @@ mean_out_imp_pcovered |>
 
 ```
 
+Above plot displays the distribution of imputed '**`p_covered`**' values after applying the mean imputation method to data points with '**`p_covered`**' values less than 0.6
+
 ### Median Imputation
 
 Median imputation is a technique used in data preprocessing to replace missing values with the median of the available data in a particular column.
@@ -243,6 +255,8 @@ Visualizing the difference between the original data and the median imputed data
 med_out_imp_pcovered |>
   plot()
 ```
+
+Above plot displays the distribution of imputed '**`p_covered`**' values after applying the median imputation method to data points with '**`p_covered`**' values less than 0.6
 
 ### Mode Imputation
 
@@ -270,6 +284,8 @@ mod_out_imp_pcovered |>
   
 ```
 
+Above plot displays the distribution of imputed '**`p_covered`**' values after applying the mode imputation method to data points with '**`p_covered`**' values less than 0.6
+
 ### Capping Imputation (aka Winsorizing)
 
 Capping imputation also known as Winsorizing involves replacing extreme values (outliers) with a predefined upper or lower limit to mitigate their impact on analysis.
@@ -295,6 +311,8 @@ cap_out_imp_pcovered |>
   plot()
 ```
 
+Above plot displays the distribution of imputed '**`p_covered`**' values after applying the capping imputation method to data points with '**`p_covered`**' values less than 0.6
+
 ## Imputing NAs
 
 Imputing NAs in data involves filling or estimating missing values to maintain data completeness for analysis.
@@ -315,6 +333,8 @@ demographics_subset <- demographics[, -ncol(demographics)]
 autoplot(clara(demographics_subset, 4)) 
   
 ```
+
+Above is the cluster plot generated using K-Medoids (CLARA) clustering algorithm on a subset of the '**`demographics`**' dataset without categorical columns, showcasing the identified cluster structure with 4 clusters.
 
 ```{r}
 #This chunk gives ERROR!
@@ -363,3 +383,5 @@ Visualizing the difference between the original data and the imputed data with M
 mice_na_imp_p_covered |>
   plot()
 ```
+
+Above shown plot depicts the results of Multivariate Imputation by Chained Equations (MICE) for imputing missing values in the '**`p_covered`**' column of the '**`na.demographics`**' dataset, showcasing the distribution of imputed values obtained through the MICE algorithm.

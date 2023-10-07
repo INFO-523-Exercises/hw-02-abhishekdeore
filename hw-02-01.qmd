@@ -81,6 +81,8 @@ tornados |>
 plot_normality(f1,len,slat)
 ```
 
+Above are the Q-Q plots assessing the normality of the '**`len`**' and '**`slat`**' variables within the '**`tornados`**' dataset, including visualizations for both logarithmic and skewed transformations
+
 ## Normality within Groups
 
 Looking within `tz` (time-zone) at the subgroup normality.
@@ -93,6 +95,8 @@ tornados %>%
   select(len, slat, f1) %>%
   plot_normality()
 ```
+
+Grouped Q-Q plots assessing the normality of '**`len`**,' '**`slat`**,' and '**`f1`**' variables within the '**`tornados`**' dataset, grouped by '**`tz`**' (time zone)
 
 ## Transforming Data
 
@@ -134,6 +138,8 @@ sqrtDy |>
   plot()
 ```
 
+Above plot displays the distribution and summary statistics of a transformed variable '**`sqrtDy`**,' created using the square root transformation method.
+
 -   Logarithmic (+1) Transformation
 
 ```{r}
@@ -146,6 +152,8 @@ summary(Log1dy)
 Log1dy |>
   plot()
 ```
+
+Above plot is presenting the distribution and summary statistics of a transformed variable '**`Log1dy`**,' obtained using the logarithmic transformation with a "+1" offset method.
 
 -   Inverse Transformation
 
@@ -160,6 +168,8 @@ InvDy |>
   plot()
 ```
 
+Above plot is depicting the distribution and summary statistics of a transformed variable '**`InvDy`**,' which has been obtained using the reciprocal transformation (Inverse Transformation) method (1/x).
+
 -   Squared Transformation
 
 ```{r}
@@ -173,6 +183,8 @@ SqrdDy |>
   plot()
 ```
 
+This plot illustrates the distribution and summary statistics of a transformed variable '**`SqrdDy`**,' derived using the squared transformation method (x\^2)
+
 -   Cubed Transformation
 
 ```{r}
@@ -185,6 +197,8 @@ summary(CubeDy)
 CubeDy |>
   plot()
 ```
+
+Above plot is displaying the distribution and summary statistics of a transformed variable '**`CubeDy`**,' generated through the cube transformation method (x\^3).
 
 ## Box-cox Transformation
 
@@ -200,3 +214,5 @@ summary(BoxCoxDy)
 BoxCoxDy |>
   plot()
 ```
+
+The above plot is depicting the distribution and summary statistics of a variable '**`BoxCoxDy`**,' which has been transformed using the Box-Cox transformation method.
