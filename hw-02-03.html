@@ -844,6 +844,7 @@ See help("Deprecated")</code></pre>
 <p><img src="hw-02-03_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<p>This is a correlation matrix plot for numerical variables which shows the relationship between variables through a heatmap like graph.</p>
 </section>
 <section id="visualize-correlations-within-groups" class="level2">
 <h2 class="anchored" data-anchor-id="visualize-correlations-within-groups"><strong>Visualize Correlations within Groups</strong></h2>
@@ -952,6 +953,7 @@ See help("Deprecated")</code></pre>
 <p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-33.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<p>Above is the correlation Matrix of Numerical Variables grouped by Artist Nationality.</p>
 <p>We will utilize the <strong><code>ggpairs()</code></strong> function from the <strong><code>GGally</code></strong> package to examine the correlations between (<strong><code>space_ratio_per_page_total</code></strong>) and (<strong><code>artist_unique_id</code></strong>).</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>artists <span class="sc">|&gt;</span> </span>
@@ -966,6 +968,7 @@ See help("Deprecated")</code></pre>
 <p><img src="hw-02-03_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<p>Above plot displays relationships between ‘<strong><code>space_ratio_per_page_total</code></strong>’ and ‘<strong><code>artist_unique_id</code></strong>’ variables, colored by ‘<strong><code>book</code></strong>’ with transparency, emphasizing potential correlations and patterns.</p>
 </section>
 <section id="describe-and-visualize-relationships-based-on-target-variables" class="level2">
 <h2 class="anchored" data-anchor-id="describe-and-visualize-relationships-based-on-target-variables"><strong>Describe and Visualize Relationships Based on Target Variables</strong></h2>
@@ -1017,6 +1020,7 @@ F-statistic:  6.68 on 1 and 3102 DF,  p-value: 0.009795</code></pre>
 <p><img src="hw-02-03_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<p>Above plot depicts the linear relationship between ‘<strong><code>edition_number</code></strong>’ and ‘<strong><code>space_ratio_per_page_total</code></strong>’ variables after removing NA values and conducting a regression analysis.</p>
 </section>
 <section id="numerical-target-variables-categorical-variable-of-interest" class="level3">
 <h3 class="anchored" data-anchor-id="numerical-target-variables-categorical-variable-of-interest"><strong>Numerical Target Variables: Categorical Variable of Interest</strong></h3>
@@ -1060,6 +1064,7 @@ F-statistic: 0.03143 on 1 and 3160 DF,  p-value: 0.8593</code></pre>
 <p><img src="hw-02-03_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<p>Above is the box plot illustrating the results of an ANOVA analysis, examining the relationship between the categorical variable ‘<strong><code>book</code></strong>’ and the numerical variable ‘<strong><code>space_ratio_per_page_total</code></strong>’.</p>
 </section>
 <section id="categorical-target-variables-numerical-variable-of-interest" class="level3">
 <h3 class="anchored" data-anchor-id="categorical-target-variables-numerical-variable-of-interest"><strong>Categorical Target Variables: Numerical Variable of Interest</strong></h3>
@@ -1131,6 +1136,7 @@ F-statistic: 0.03143 on 1 and 3160 DF,  p-value: 0.8593</code></pre>
 <p><img src="hw-02-03_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<p>Above is the density plot showcasing the distribution of ‘<strong><code>space_ratio_per_page_total</code></strong>’ within different ‘<strong><code>book</code></strong>’ categories</p>
 </section>
 <section id="categorical-target-variables-categorical-variable-of-interest" class="level3">
 <h3 class="anchored" data-anchor-id="categorical-target-variables-categorical-variable-of-interest"><strong>Categorical Target Variables: Categorical Variable of Interest</strong></h3>
@@ -1157,6 +1163,7 @@ Test for independence of all factors:
 <p><img src="hw-02-03_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
+<p>Above is the clustered bar plot depicting the results of a Chi-square test for Independence, examining the relationship between the categorical variable ‘<strong><code>book</code></strong>’ and the categorical variable ‘<strong><code>artist_gender</code></strong>’</p>
 </section>
 </section>
 

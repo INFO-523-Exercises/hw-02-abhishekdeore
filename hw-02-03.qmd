@@ -65,6 +65,8 @@ artists |>
   plot_correlate()
 ```
 
+This is a correlation matrix plot for numerical variables which shows the relationship between variables through a heatmap like graph.
+
 ## **Visualize Correlations within Groups**
 
 It is always advisable to examine the correlations among numerical variables within specific groups if we plan to compare these groups later on. This preliminary analysis helps understand how variables behave within distinct categories and can provide insights for subsequent comparisons.
@@ -75,6 +77,8 @@ artists |>
   plot_correlate()
 ```
 
+Above is the correlation Matrix of Numerical Variables grouped by Artist Nationality.
+
 We will utilize the **`ggpairs()`** function from the **`GGally`** package to examine the correlations between (**`space_ratio_per_page_total`**) and (**`artist_unique_id`**).
 
 ```{r}
@@ -84,6 +88,8 @@ artists |>
   theme(strip.background = element_blank())
   
 ```
+
+Above plot displays relationships between '**`space_ratio_per_page_total`**' and '**`artist_unique_id`**' variables, colored by '**`book`**' with transparency, emphasizing potential correlations and patterns.
 
 ## **Describe and Visualize Relationships Based on Target Variables**
 
@@ -115,6 +121,8 @@ summary(num_num)
 plot(num_num)
 ```
 
+Above plot depicts the linear relationship between '**`edition_number`**' and '**`space_ratio_per_page_total`**' variables after removing NA values and conducting a regression analysis.
+
 ### **Numerical Target Variables: Categorical Variable of Interest**
 
 ```{r}
@@ -136,6 +144,8 @@ plot(num_cat) +
   theme(axis.text.x = element_blank())
 ```
 
+Above is the box plot illustrating the results of an ANOVA analysis, examining the relationship between the categorical variable '**`book`**' and the numerical variable '**`space_ratio_per_page_total`**'.
+
 ### **Categorical Target Variables: Numerical Variable of Interest**
 
 Note that this produces descriptive statistics, unlike the other relationships we are looking at.
@@ -155,6 +165,8 @@ summary(cat_num)
 plot(cat_num) 
 ```
 
+Above is the density plot showcasing the distribution of '**`space_ratio_per_page_total`**' within different '**`book`**' categories
+
 ### **Categorical Target Variables: Categorical Variable of Interest**
 
 ```{r, warning=FALSE}
@@ -171,3 +183,5 @@ summary(cat_cat)
 ```{r}
 plot(cat_cat)
 ```
+
+Above is the clustered bar plot depicting the results of a Chi-square test for Independence, examining the relationship between the categorical variable '**`book`**' and the categorical variable '**`artist_gender`**'
