@@ -1,0 +1,365 @@
+---
+title: "Imputing like a Data Scientist"
+author: "Abhishek Deore"
+format: html
+editor: visual
+---
+
+## Required Set-up
+
+Initially, we will prepare our environment with the necessary packages.
+
+```{r}
+# Sets the number of significant figures to two - e.g., 0.01
+options(digits = 2)
+
+# Required package for quick package downloading and loading 
+if (!require(pacman))
+  install.packages("pacman")
+
+pacman::p_load(colorblindr, # Colorblind friendly pallettes
+               cluster, # K cluster analyses
+               dlookr, # Exploratory data analysis
+               formattable, # HTML tables from R outputs
+               ggfortify, # Plotting tools for stats
+               ggpubr, # Publishable ggplots
+               here, # Standardizes paths to data
+               kableExtra, # Alternative to formattable
+               knitr, # Needed to write HTML reports
+               missRanger, # To generate NAs
+               plotly, # Visualization package
+               rattle, # Decision tree visualization
+               rpart, # rpart algorithm
+               tidyverse, # Powerful data wrangling package suite
+               visdat) # Another EDA visualization package
+
+# Set global ggplot() theme
+# Theme pub_clean() from the ggpubr package with base text size = 16
+theme_set(theme_pubclean(base_size = 16)) 
+# All axes titles to their respective far right sides
+theme_update(axis.title = element_text(hjust = 1))
+# Remove axes ticks
+theme_update(axis.ticks = element_blank()) 
+# Remove legend key
+theme_update(legend.key = element_blank())
+```
+
+## Load and Examine the Data-set
+
+We will be working with the **demographics** data-set and we will load the data-set in the **demographics** variable.
+
+```{r}
+demographics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-09-05/demographics.csv')
+
+demographics |>
+  head() |>
+  formattable()
+```
+
+Now, we will drop the 'Na' values in the data-set using the na.omit() function and then we will daignose our data-set.
+
+```{r}
+demographics <- na.omit(demographics)
+demographics |>
+  diagnose() |>
+  formattable()
+```
+
+Here,
+
+-   `variables`: name of each variable
+
+-   `types`: data type of each variable
+
+-   `missing_count`: number of missing values
+
+-   `missing_percent`: percentage of missing values
+
+-   `unique_count`: number of unique values
+
+-   `unique_rate`: rate of unique value - unique_count / number of observations
+
+## Diagnose Outliers
+
+Inorder to diagnose the outlliers we will create a table with columns containing outliers and plot outliers in a box plot and histogram.
+
+```{r}
+# Table showing outliers
+demographics |>
+  diagnose_outlier() |>
+  filter(outliers_ratio > 0) |>  
+  mutate(rate = outliers_mean / with_mean) |>
+  arrange(desc(rate)) |> 
+  select(-outliers_cnt) |>
+  formattable()
+```
+
+Plotting the histograms and boxplots for the outliers.
+
+```{r}
+# Boxplots and histograms of data with and without outliers
+demographics |>
+  select(find_outliers(demographics)) |>
+           plot_outlier()
+```
+
+## Basic Exploration of Missing Values (NAs)
+
+We will now generate a new dataset, **na.demographics**, by introducing missing values (NAs) randomly into the **demographics** dataset with a probability of 30%.
+
+```{r}
+# Randomly generate NAs for 30
+na.demographics <- demographics |>
+  generateNA(p = 0.3)
+
+# First six rows
+na.demographics |>
+  head() |>
+  formattable()
+```
+
+Then we will generate a table that shows the distribution of missing values (NAs) in the '**na.dataset**' without plotting it.
+
+```{r}
+# Create the NA table
+na.demographics |>
+  plot_na_pareto(only_na = TRUE, plot = FALSE) |>
+  formattable() # Publishable table
+```
+
+Now we will generate a Pareto plot that visualizes the intersection of columns with missing values in the '**na.demographics**' dataset. This plot will provide a visual representation of the distribution of missing data across columns.
+
+```{r}
+# Plot the insersect of the columns with missing values
+# This plot visualizes the table above
+na.demographics |>
+  plot_na_pareto(only_na = TRUE)
+```
+
+## Advance Exploration of Missing Values
+
+Now we will generate a plot that visualizes the intersections of missing values in the '**covered**', '**employment**', and '**year**' columns of the '**na.demographics**' dataset. It shows which combinations of these columns have missing values in the same rows.
+
+```{r}
+na.demographics |>
+  select(covered, employment, year) |>
+  plot_na_intersect(only_na = TRUE)
+```
+
+-   Intersect plot that shows, for every combination of columns relevant, how many missing values are common
+
+-   Orange boxes are the columns in question
+
+-   x axis (top green bar plots) show the number of missing values in that column
+
+-   y axis (right green bars) show the number of missing values in the columns in orange blocks
+
+### Determining if NA Observations are the Same.
+
+The following code will create an interactive plot using Plotly to visualize missing values in the '**covered**', '**employment**', and '**year**' columns of the '**na.demographics**' dataset, allowing for detailed examination of missing data patterns in each row.
+
+-   Missing values can be the same observation across several columns, this is not shown above
+
+-   The visdat package can solve this with the `vis_miss()` function which shows the rows with missing values through `ggplotly()`
+
+-   Here we will show ALL columns with NAs, and you can zoom into individual rows (interactive plot)
+
+```{r}
+na.demographics |>
+ select(covered, employment, year) |>
+ vis_miss() |>
+ ggplotly() 
+```
+
+## Impute Outliers and NAs
+
+Imputing outliers typically involves replacing extreme or unusual data points with more typical values to reduce their impact on statistical analysis. Imputing missing values (NAs) is the process of filling in or estimating data points that are missing or undefined to maintain data completeness for analysis.
+
+### Classifying Outliers
+
+Before imputing outliers, you will want to diagnose whether it's they are natural outliers or not.
+
+This code uses **ggplot2** to produce a box plot, illustrating the relationship between '**p_covered**' and '**p_members**' columns from the '**demographics**' dataset, with the fill color based on '**p_members**.'
+
+```{r warning = FALSE}
+library(ggplot2)
+
+# Box plot
+demographics %>% 
+  ggplot(aes(x = p_covered, y = p_members, fill = p_members)) + # Create a ggplot
+  geom_boxplot(width = 0.5, outlier.size = 2, outlier.alpha = 0.5) +
+  xlab("P_covered") +  
+  ylab("p_members") + 
+  theme(legend.position = "none")  
+```
+
+### Mean Inputation
+
+Mean imputation is a simple method for handling missing data by replacing missing values with the mean (average) of the available data in the same column.
+
+While straightforward, it can distort the distribution and variance of the data and may not capture underlying patterns in the missing values.
+
+```{r}
+
+mean_out_imp_pcovered <- demographics |>
+  select(p_covered) |>
+  filter(p_covered < 0.6)  |>
+  imputate_outlier(p_covered, method = "mean")
+
+# Output showing the summary statistics of our imputation
+mean_out_imp_pcovered |>
+  summary() 
+```
+
+Visualizing the difference between the original data and the mean imputed data.
+
+```{r}
+mean_out_imp_pcovered |>
+  plot()
+
+```
+
+### Median Imputation
+
+Median imputation is a technique used in data preprocessing to replace missing values with the median of the available data in a particular column.
+
+It is a robust method that can help maintain central tendencies in the data while handling missing values.
+
+```{r}
+
+med_out_imp_pcovered <- demographics |>
+  select(p_covered) |>
+  filter(p_covered < 0.6) |>
+  imputate_outlier(p_covered, method = "median")
+
+# Output showing the summary statistics of our imputation
+med_out_imp_pcovered |>
+  summary()
+```
+
+Visualizing the difference between the original data and the median imputed data.
+
+```{r}
+med_out_imp_pcovered |>
+  plot()
+```
+
+### Mode Imputation
+
+Mode imputation is a method of filling missing data by replacing it with the most frequently occurring value in a specific column or dataset.
+
+It is commonly used for categorical or nominal data and can introduce bias if the mode is not representative of the true underlying distribution.
+
+```{r}
+
+mod_out_imp_pcovered <- demographics |>
+  select(p_covered) |>
+  filter(p_covered < 0.6) |>
+  imputate_outlier(p_covered, method = "mode")
+
+# Output showing the summary statistics of our imputation
+mod_out_imp_pcovered |>
+  summary()
+```
+
+Visualizing the difference between the original data and the mode imputed data.
+
+```{r}
+mod_out_imp_pcovered |>
+  plot()
+  
+```
+
+### Capping Imputation (aka Winsorizing)
+
+Capping imputation also known as Winsorizing involves replacing extreme values (outliers) with a predefined upper or lower limit to mitigate their impact on analysis.
+
+It's a technique used to restrict imputed values within a specified range, ensuring data remains within reasonable bounds.
+
+```{r}
+
+cap_out_imp_pcovered <- demographics |>
+  select(p_covered) |>
+  filter(p_covered < 0.6) |>
+  imputate_outlier(p_covered, method = "capping")
+
+# Output showing the summary statistics of our imputation
+cap_out_imp_pcovered |>
+  summary()
+```
+
+Visualizing the difference between the original data and the imputed data with Capping technique.
+
+```{r}
+cap_out_imp_pcovered |>
+  plot()
+```
+
+## Imputing NAs
+
+Imputing NAs in data involves filling or estimating missing values to maintain data completeness for analysis.
+
+Various methods, such as mean imputation or machine learning-based techniques, can be used to replace NAs with plausible values.
+
+### K-Nearest Neighbor (KNN) Imputation.
+
+K-Nearest Neighbors (KNN) is a supervised machine learning algorithm used for classification and regression tasks. It works based on the principle of proximity i.e. objects that are closer in feature space are more similar to each other.
+
+K-nearest neighbors (KNN) imputation is a technique for filling missing values by estimating them based on the values of their nearest neighbors in the dataset.
+
+Here's a visual example using the `clara()` function from the `cluster` package to run a KNN algorithm on our `dataset`, where three clusters are created by the algorithm.
+
+```{r}
+# KNN plot of our dataset without categories
+demographics_subset <- demographics[, -ncol(demographics)]
+autoplot(clara(demographics_subset, 4)) 
+  
+```
+
+```{r}
+#This chunk gives ERROR!
+
+#knn_na_imp_pmembers <- na.demographics |>
+  #imputate_na(p_members, method = "knn")
+
+# Plot showing the results of our imputation
+
+#knn_na_imp_pmembers |>
+  #plot()
+```
+
+### **Recursive Partitioning and Regression Trees (rpart)**
+
+Recursive Partitioning and Regression Trees (rpart) is a popular machine learning technique for building decision trees in R. Decision trees are a type of predictive model that can be used for both classification and regression tasks.
+
+The **rpart** package provides tools for creating, visualizing, and interpreting decision trees.
+
+```{r}
+#This chunk gives ERROR!
+
+#rpart_na_imp_pmembers <- na.demographics |>
+  #imputate_na(employment, method = "rpart")
+
+# Plot showing the results of our imputation
+#rpart_na_imp_pmembers |>
+  #plot()
+```
+
+### **Multivariate Imputation by Chained Equations (MICE)**
+
+Multivariate Imputation by Chained Equations (**MICE**) is a statistical technique used for handling missing data in multivariate datasets. It is a flexible and widely adopted method for imputing missing values by modeling each incomplete variable using its relationship with other variables.
+
+**NOTE**: We will have to set a random seed (e.g., 123) since the MICE algorithm pools several simulated imputations. Without setting a seed, a different result will occur after each simulation.
+
+```{r, warning=FALSE}
+# Raw summary, output suppressed
+mice_na_imp_p_covered <- na.demographics |>
+  imputate_na(p_covered, method = "mice", seed = 123)
+```
+
+Visualizing the difference between the original data and the imputed data with MICE.
+
+```{r}
+mice_na_imp_p_covered |>
+  plot()
+```

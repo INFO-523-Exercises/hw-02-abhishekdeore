@@ -1,0 +1,202 @@
+---
+title: "Transforming like a Data...Transformer"
+author: "Abhishek Deore"
+format: html
+editor: visual
+---
+
+## Required Set-up
+
+Initially, we will prepare our environment with the necessary packages.
+
+```{r}
+# Sets the number of significant figures to two - e.g., 0.01
+options(digits = 2)
+
+# Required package for quick package downloading and loading 
+if (!require(pacman))  
+  install.packages("pacman")
+
+# Downloads and load required packages
+pacman::p_load(dlookr, # Exploratory data analysis
+               forecast, # Needed for Box-Cox transformations
+               formattable, # HTML tables from R outputs
+               here, # Standardizes paths to data
+               kableExtra, # Alternative to formattable
+               knitr, # Needed to write HTML reports
+               missRanger, # To generate NAs
+               tidyverse) # Powerful data wrangling package suite
+```
+
+## Load and Examine the Data-set
+
+We will be working with the **tornados** data-set and we will load the data-set in the **tornados** variable.
+
+```{r}
+tornados <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-16/tornados.csv')
+
+
+
+tornados |>
+  head(20)|>
+  formattable()
+```
+
+### Describing properties of our Data (Refined)
+
+#### Skewness
+
+Skewness is a statistical measure that quantifies the asymmetry in the distribution of data. **Positive skewness** indicates a longer tail on the right side of the distribution (**right-skewed**), while **negative skewness** indicates a longer tail on the left side (**left-skewed**).
+
+here,
+
+-   `slat`: Starting latitudes in decimal degrees
+
+-   `len`: Length in miles
+
+-   `f1`: FIPS code for the 1st county
+
+```{r}
+tornados |>
+  select(slat, len, f1) |>
+  describe() |>
+  select(described_variables, skewness) |>
+  formattable()
+```
+
+## **Testing Normality (Accelerated)**
+
+Testing normality (accelerated) is a statistical assessment of whether a dataset follows a normal distribution with a specific focus on detecting deviations in the tails of the distribution.
+
+It extends traditional normality tests to identify departures from normality in the extreme values, which can be important for certain analyses and modeling.
+
+### Q-Q plots
+
+Quantile-Quantile (Q-Q) plots are graphical tools used in statistics to assess whether a dataset follows a particular theoretical distribution, typically the normal distribution.
+
+Notably, `plot_normality()` will show us the logaritmic and skewed transformations
+
+```{r}
+tornados |>
+plot_normality(f1,len,slat)
+```
+
+## Normality within Groups
+
+Looking within `tz` (time-zone) at the subgroup normality.
+
+### Q-Q plots
+
+```{r}
+tornados %>%
+  group_by(tz) %>% #group by month
+  select(len, slat, f1) %>%
+  plot_normality()
+```
+
+## Transforming Data
+
+Our data might benefit from transformation because not all natural relationships adhere to a linear pattern; for instance, many biological phenomena exhibit characteristics like a power law or logarithmic curve, which deviate from linear scaling.
+
+We will explore various transformation methods for the **`dy`** column Initially, we will eliminate zero values from the dataset since **`dy`** ( Day of the month ) values cannot be zero.
+
+```{r}
+DyMod <- tornados |>
+  filter(dy > 0)
+```
+
+### **Square-root, Cube-root, and Logarithmic Transformations**
+
+Resolving Skewness using `transform()`.
+
+"sqrt": square-root transformation. **(moderate skew)**
+
+"log": log transformation. **(greater skew)**
+
+"log+1": log transformation. Used for values that contain 0.
+
+"1/x": inverse transformation. **(severe skew)**
+
+"x\^2": squared transformation.
+
+"x\^3": cubed transformation.
+
+-   Square-root Transformation
+
+```{r}
+sqrtDy <- transform(DyMod$dy, method = "sqrt") 
+
+summary(sqrtDy)
+```
+
+```{r}
+sqrtDy |>
+  plot()
+```
+
+-   Logarithmic (+1) Transformation
+
+```{r}
+Log1dy <- transform(DyMod$dy, method = "log+1") 
+
+summary(Log1dy)
+```
+
+```{r}
+Log1dy |>
+  plot()
+```
+
+-   Inverse Transformation
+
+```{r}
+InvDy <- transform(DyMod$dy, method = "1/x") 
+
+summary(InvDy)
+```
+
+```{r}
+InvDy |>
+  plot()
+```
+
+-   Squared Transformation
+
+```{r}
+SqrdDy <- transform(DyMod$dy, method = "x^2") 
+
+summary(SqrdDy)
+```
+
+```{r}
+SqrdDy |>
+  plot()
+```
+
+-   Cubed Transformation
+
+```{r}
+CubeDy <- transform(DyMod$dy, method = "x^3") 
+
+summary(CubeDy)
+```
+
+```{r}
+CubeDy |>
+  plot()
+```
+
+## Box-cox Transformation
+
+The Box-Cox transformation is a statistical technique used to stabilize variance and make data more closely approximate a normal distribution by applying a power transformation. It helps address issues like heteroscedasticity and non-normality in data analysis.
+
+```{r}
+BoxCoxDy <- transform(DyMod$dy, method = "Box-Cox") 
+
+summary(BoxCoxDy)
+```
+
+```{r}
+BoxCoxDy |>
+  plot()
+```

@@ -1,0 +1,173 @@
+---
+title: "Correlating Like a Data Master"
+author: "Abhishek Deore"
+format: html
+editor: visual
+---
+
+## Required Set-up
+
+Initially, we will prepare our environment with the necessary packages.
+
+```{r, warning=FALSE}
+if (!require(pacman))
+  install.packages("pacman")
+
+pacman::p_load(colorblindr,
+       dlookr,
+       formattable,
+       GGally,
+       ggdist,
+       ggpubr,
+       ggridges,
+       here,
+       tidyverse)
+
+# Set global ggplot() theme
+# Theme pub_clean() from the ggpubr package with base text size = 16
+theme_set(theme_pubclean(base_size = 12)) 
+# All axes titles to their respective far right sides
+theme_update(axis.title = element_text(hjust = 1))
+# Remove axes ticks
+theme_update(axis.ticks = element_blank()) 
+# Remove legend key
+theme_update(legend.key = element_blank())
+```
+
+## Load and Examine the Data-set
+
+```{r}
+artists <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-17/artists.csv')
+
+
+
+artists |>
+  head()|>
+  formattable()
+
+```
+
+## **Describe and Visualize Correlations**
+
+Correlations represent statistical associations between two numeric variables, and they may or may not imply causation. Investigating correlations within your data is essential for assessing data independence, a crucial assumption for parametric statistical methods, ensuring that your variables were collected randomly.
+
+This exploration helps identify potential relationships and dependencies among variables, aiding in data analysis and hypothesis testing.
+
+```{r}
+# Table of correlations between numerical variables (we are sticking to the default Pearson's r coefficient)
+correlate(artists) |>
+  formattable()
+```
+
+```{r}
+# Correlation matrix of numerical variables
+artists |>
+  plot_correlate()
+```
+
+## **Visualize Correlations within Groups**
+
+It is always advisable to examine the correlations among numerical variables within specific groups if we plan to compare these groups later on. This preliminary analysis helps understand how variables behave within distinct categories and can provide insights for subsequent comparisons.
+
+```{r, warning=FALSE}
+artists |>
+  group_by(artist_nationality) |>
+  plot_correlate()
+```
+
+We will utilize the **`ggpairs()`** function from the **`GGally`** package to examine the correlations between (**`space_ratio_per_page_total`**) and (**`artist_unique_id`**).
+
+```{r}
+artists |> 
+  dplyr::select(book, space_ratio_per_page_total, artist_unique_id) |>
+  ggpairs(aes(color = book, alpha = 0.5)) +
+  theme(strip.background = element_blank())
+  
+```
+
+## **Describe and Visualize Relationships Based on Target Variables**
+
+### Target Variables
+
+`Target variables` are essentially numerical or categorical variables that you want to relate others to in a data frame. `dlookr` does this through the `target_by()` function, which is similar to `group_by()` in `dplyr`. The `relate()` function then briefly analyzes the relationship between the target variable and the variables of interest.
+
+The relationships below will have the formula relationship `target ~ predictor`.
+
+### **Numerical Target Variables: Numerical Variable of Interest**
+
+```{r}
+# First, we need to remove NAs, they cause an error
+dataset.noNA <- artists |> 
+  drop_na()
+
+# The numerical predictor variable that we want
+num <- target_by(dataset.noNA, edition_number)
+
+# Relating the variable of interest to the numerical target variable
+num_num <- relate(num, space_ratio_per_page_total)
+
+# Summary of the regression analysis - the same as the summary from lm(Formula)
+summary(num_num)
+```
+
+```{r}
+# Plotting the linear relationship
+plot(num_num)
+```
+
+### **Numerical Target Variables: Categorical Variable of Interest**
+
+```{r}
+# The categorical predictor variable that we want
+num <- target_by(artists, space_ratio_per_page_total) 
+
+# We need to change Group to a factor
+num$book <- as.factor(num$book)
+
+# Relating the variable of interest to the numerical target variable
+num_cat <- relate(num, book)
+
+# Summary of the ANOVA analysis - the same as the summary from anova(lm(Formula))
+summary(num_cat)
+```
+
+```{r}
+plot(num_cat) + 
+  theme(axis.text.x = element_blank())
+```
+
+### **Categorical Target Variables: Numerical Variable of Interest**
+
+Note that this produces descriptive statistics, unlike the other relationships we are looking at.
+
+```{r, warning=FALSE}
+# The categorical predictor variable that we want
+categ <- target_by(artists, book)
+
+# Relating the variable of interest to the numerical target variable
+cat_num <- relate(categ, space_ratio_per_page_total)
+
+# Summary of descriptive statistics
+summary(cat_num)
+```
+
+```{r}
+plot(cat_num) 
+```
+
+### **Categorical Target Variables: Categorical Variable of Interest**
+
+```{r, warning=FALSE}
+# The categorical predictor variable that we want
+categ <- target_by(artists, artist_gender)
+
+# Relating the variable of interest to the categorical target variable
+cat_cat <- relate(categ, book)
+
+# Summary of the Chi-square test for Independence
+summary(cat_cat)
+```
+
+```{r}
+plot(cat_cat)
+```

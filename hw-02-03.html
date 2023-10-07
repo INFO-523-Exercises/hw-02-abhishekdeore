@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Abhishek Deore">
+
+<title>Correlating Like a Data Master</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="hw-02-03_files/libs/clipboard/clipboard.min.js"></script>
+<script src="hw-02-03_files/libs/quarto-html/quarto.js"></script>
+<script src="hw-02-03_files/libs/quarto-html/popper.min.js"></script>
+<script src="hw-02-03_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="hw-02-03_files/libs/quarto-html/anchor.min.js"></script>
+<link href="hw-02-03_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="hw-02-03_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="hw-02-03_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="hw-02-03_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="hw-02-03_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Correlating Like a Data Master</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Abhishek Deore </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="required-set-up" class="level2">
+<h2 class="anchored" data-anchor-id="required-set-up">Required Set-up</h2>
+<p>Initially, we will prepare our environment with the necessary packages.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">require</span>(pacman))</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">install.packages</span>(<span class="st">"pacman"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: pacman</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(colorblindr,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>       dlookr,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>       formattable,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>       GGally,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>       ggdist,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>       ggpubr,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>       ggridges,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>       here,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>       tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Installing package into 'C:/Users/ABHISHEK DEORE/AppData/Local/R/win-library/4.3'
+(as 'lib' is unspecified)</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set global ggplot() theme</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Theme pub_clean() from the ggpubr package with base text size = 16</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_pubclean</span>(<span class="at">base_size =</span> <span class="dv">12</span>)) </span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># All axes titles to their respective far right sides</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_update</span>(<span class="at">axis.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="dv">1</span>))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove axes ticks</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_update</span>(<span class="at">axis.ticks =</span> <span class="fu">element_blank</span>()) </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove legend key</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_update</span>(<span class="at">legend.key =</span> <span class="fu">element_blank</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="load-and-examine-the-data-set" class="level2">
+<h2 class="anchored" data-anchor-id="load-and-examine-the-data-set">Load and Examine the Data-set</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>artists <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(<span class="st">'https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-17/artists.csv'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Rows: 3162 Columns: 14
+── Column specification ────────────────────────────────────────────────────────
+Delimiter: ","
+chr (8): artist_name, artist_nationality, artist_nationality_other, artist_g...
+dbl (6): edition_number, year, space_ratio_per_page_total, artist_unique_id,...
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>artists <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()<span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">formattable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table class="table table-condensed">
+<thead>
+<tr>
+<th style="text-align:right;">
+artist_name
+</th>
+<th style="text-align:right;">
+edition_number
+</th>
+<th style="text-align:right;">
+year
+</th>
+<th style="text-align:right;">
+artist_nationality
+</th>
+<th style="text-align:right;">
+artist_nationality_other
+</th>
+<th style="text-align:right;">
+artist_gender
+</th>
+<th style="text-align:right;">
+artist_race
+</th>
+<th style="text-align:right;">
+artist_ethnicity
+</th>
+<th style="text-align:right;">
+book
+</th>
+<th style="text-align:right;">
+space_ratio_per_page_total
+</th>
+<th style="text-align:right;">
+artist_unique_id
+</th>
+<th style="text-align:right;">
+moma_count_to_year
+</th>
+<th style="text-align:right;">
+whitney_count_to_year
+</th>
+<th style="text-align:right;">
+artist_race_nwi
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+Aaron Douglas
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+1991
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+Male
+</td>
+<td style="text-align:right;">
+Black or African American
+</td>
+<td style="text-align:right;">
+Not Hispanic or Latino origin
+</td>
+<td style="text-align:right;">
+Gardner
+</td>
+<td style="text-align:right;">
+0.3533658
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+Non-White
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+Aaron Douglas
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+1996
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+Male
+</td>
+<td style="text-align:right;">
+Black or African American
+</td>
+<td style="text-align:right;">
+Not Hispanic or Latino origin
+</td>
+<td style="text-align:right;">
+Gardner
+</td>
+<td style="text-align:right;">
+0.3739470
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+Non-White
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+Aaron Douglas
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+2001
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+Male
+</td>
+<td style="text-align:right;">
+Black or African American
+</td>
+<td style="text-align:right;">
+Not Hispanic or Latino origin
+</td>
+<td style="text-align:right;">
+Gardner
+</td>
+<td style="text-align:right;">
+0.3032593
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+Non-White
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+Aaron Douglas
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2005
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+Male
+</td>
+<td style="text-align:right;">
+Black or African American
+</td>
+<td style="text-align:right;">
+Not Hispanic or Latino origin
+</td>
+<td style="text-align:right;">
+Gardner
+</td>
+<td style="text-align:right;">
+0.3770489
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+Non-White
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+Aaron Douglas
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+2009
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+Male
+</td>
+<td style="text-align:right;">
+Black or African American
+</td>
+<td style="text-align:right;">
+Not Hispanic or Latino origin
+</td>
+<td style="text-align:right;">
+Gardner
+</td>
+<td style="text-align:right;">
+0.3984097
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+Non-White
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+Aaron Douglas
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+2013
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+American
+</td>
+<td style="text-align:right;">
+Male
+</td>
+<td style="text-align:right;">
+Black or African American
+</td>
+<td style="text-align:right;">
+Not Hispanic or Latino origin
+</td>
+<td style="text-align:right;">
+Gardner
+</td>
+<td style="text-align:right;">
+0.4528686
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+Non-White
+</td>
+</tr>
+</tbody>
+
+</table>
+</div>
+</div>
+</section>
+<section id="describe-and-visualize-correlations" class="level2">
+<h2 class="anchored" data-anchor-id="describe-and-visualize-correlations"><strong>Describe and Visualize Correlations</strong></h2>
+<p>Correlations represent statistical associations between two numeric variables, and they may or may not imply causation. Investigating correlations within your data is essential for assessing data independence, a crucial assumption for parametric statistical methods, ensuring that your variables were collected randomly.</p>
+<p>This exploration helps identify potential relationships and dependencies among variables, aiding in data analysis and hypothesis testing.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Table of correlations between numerical variables (we are sticking to the default Pearson's r coefficient)</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">correlate</span>(artists) <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">formattable</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+
+<table class="table table-condensed">
+<thead>
+<tr>
+<th style="text-align:right;">
+var1
+</th>
+<th style="text-align:right;">
+var2
+</th>
+<th style="text-align:right;">
+coef_corr
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+0.787895129
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+-0.050168623
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+-0.009187871
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+0.028904235
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+0.110288213
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+0.787895129
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+-0.058053899
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+-0.031929339
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+0.091178242
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+0.106158443
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+-0.050168623
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+-0.058053899
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+0.031816469
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+0.185175306
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+-0.104278667
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+-0.009187871
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+-0.031929339
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+0.031816469
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+0.054564456
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+-0.050968949
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+0.028904235
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+0.091178242
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+0.185175306
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+0.054564456
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+0.035871862
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+edition_number
+</td>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+0.110288213
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+year
+</td>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+0.106158443
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+space_ratio_per_page_total
+</td>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+-0.104278667
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+artist_unique_id
+</td>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+-0.050968949
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+moma_count_to_year
+</td>
+<td style="text-align:right;">
+whitney_count_to_year
+</td>
+<td style="text-align:right;">
+0.035871862
+</td>
+</tr>
+</tbody>
+
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Correlation matrix of numerical variables</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>artists <span class="sc">|&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_correlate</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: 'plot_correlate' is deprecated.
+Use 'plot.correlate' instead.
+See help("Deprecated")</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-4-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="visualize-correlations-within-groups" class="level2">
+<h2 class="anchored" data-anchor-id="visualize-correlations-within-groups"><strong>Visualize Correlations within Groups</strong></h2>
+<p>It is always advisable to examine the correlations among numerical variables within specific groups if we plan to compare these groups later on. This preliminary analysis helps understand how variables behave within distinct categories and can provide insights for subsequent comparisons.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>artists <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(artist_nationality) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_correlate</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-5.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-6.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-7.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-8.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-9.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-10.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-11.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-12.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-13.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-14.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-15.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-16.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-17.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-18.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-19.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-20.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-21.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-22.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-23.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-24.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-25.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-26.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-27.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-28.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-29.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-30.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-31.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-32.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-5-33.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>We will utilize the <strong><code>ggpairs()</code></strong> function from the <strong><code>GGally</code></strong> package to examine the correlations between (<strong><code>space_ratio_per_page_total</code></strong>) and (<strong><code>artist_unique_id</code></strong>).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>artists <span class="sc">|&gt;</span> </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(book, space_ratio_per_page_total, artist_unique_id) <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggpairs</span>(<span class="fu">aes</span>(<span class="at">color =</span> book, <span class="at">alpha =</span> <span class="fl">0.5</span>)) <span class="sc">+</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">strip.background =</span> <span class="fu">element_blank</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="describe-and-visualize-relationships-based-on-target-variables" class="level2">
+<h2 class="anchored" data-anchor-id="describe-and-visualize-relationships-based-on-target-variables"><strong>Describe and Visualize Relationships Based on Target Variables</strong></h2>
+<section id="target-variables" class="level3">
+<h3 class="anchored" data-anchor-id="target-variables">Target Variables</h3>
+<p><code>Target variables</code> are essentially numerical or categorical variables that you want to relate others to in a data frame. <code>dlookr</code> does this through the <code>target_by()</code> function, which is similar to <code>group_by()</code> in <code>dplyr</code>. The <code>relate()</code> function then briefly analyzes the relationship between the target variable and the variables of interest.</p>
+<p>The relationships below will have the formula relationship <code>target ~ predictor</code>.</p>
+</section>
+<section id="numerical-target-variables-numerical-variable-of-interest" class="level3">
+<h3 class="anchored" data-anchor-id="numerical-target-variables-numerical-variable-of-interest"><strong>Numerical Target Variables: Numerical Variable of Interest</strong></h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># First, we need to remove NAs, they cause an error</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>dataset.noNA <span class="ot">&lt;-</span> artists <span class="sc">|&gt;</span> </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co"># The numerical predictor variable that we want</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>num <span class="ot">&lt;-</span> <span class="fu">target_by</span>(dataset.noNA, edition_number)</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Relating the variable of interest to the numerical target variable</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>num_num <span class="ot">&lt;-</span> <span class="fu">relate</span>(num, space_ratio_per_page_total)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Summary of the regression analysis - the same as the summary from lm(Formula)</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(num_num)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = formula_str, data = data)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-7.3927 -3.3225 -0.3119  3.7333  8.7368 
+
+Coefficients:
+                           Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)                  8.4413     0.1313  64.295  &lt; 2e-16 ***
+space_ratio_per_page_total  -0.5111     0.1977  -2.585  0.00979 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 4.374 on 3102 degrees of freedom
+Multiple R-squared:  0.002149,  Adjusted R-squared:  0.001827 
+F-statistic:  6.68 on 1 and 3102 DF,  p-value: 0.009795</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plotting the linear relationship</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(num_num)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="numerical-target-variables-categorical-variable-of-interest" class="level3">
+<h3 class="anchored" data-anchor-id="numerical-target-variables-categorical-variable-of-interest"><strong>Numerical Target Variables: Categorical Variable of Interest</strong></h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The categorical predictor variable that we want</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>num <span class="ot">&lt;-</span> <span class="fu">target_by</span>(artists, space_ratio_per_page_total) </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="co"># We need to change Group to a factor</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>num<span class="sc">$</span>book <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(num<span class="sc">$</span>book)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Relating the variable of interest to the numerical target variable</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>num_cat <span class="ot">&lt;-</span> <span class="fu">relate</span>(num, book)</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Summary of the ANOVA analysis - the same as the summary from anova(lm(Formula))</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(num_cat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = formula(formula_str), data = data)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-0.4371 -0.2225 -0.1202  0.0650  3.2650 
+
+Coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 0.529156   0.008948  59.135   &lt;2e-16 ***
+bookJanson  0.002555   0.014412   0.177    0.859    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.3944 on 3160 degrees of freedom
+Multiple R-squared:  9.946e-06, Adjusted R-squared:  -0.0003065 
+F-statistic: 0.03143 on 1 and 3160 DF,  p-value: 0.8593</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(num_cat) <span class="sc">+</span> </span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_blank</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="categorical-target-variables-numerical-variable-of-interest" class="level3">
+<h3 class="anchored" data-anchor-id="categorical-target-variables-numerical-variable-of-interest"><strong>Categorical Target Variables: Numerical Variable of Interest</strong></h3>
+<p>Note that this produces descriptive statistics, unlike the other relationships we are looking at.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The categorical predictor variable that we want</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>categ <span class="ot">&lt;-</span> <span class="fu">target_by</span>(artists, book)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Relating the variable of interest to the numerical target variable</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>cat_num <span class="ot">&lt;-</span> <span class="fu">relate</span>(categ, space_ratio_per_page_total)</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Summary of descriptive statistics</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cat_num)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> described_variables     book                 n              na   
+ Length:3            Length:3           Min.   :1219   Min.   :0  
+ Class :character    Class :character   1st Qu.:1581   1st Qu.:0  
+ Mode  :character    Mode  :character   Median :1943   Median :0  
+                                        Mean   :2108   Mean   :0  
+                                        3rd Qu.:2552   3rd Qu.:0  
+                                        Max.   :3162   Max.   :0  
+      mean              sd            se_mean              IQR        
+ Min.   :0.5292   Min.   :0.3621   Min.   :0.007013   Min.   :0.2388  
+ 1st Qu.:0.5296   1st Qu.:0.3782   1st Qu.:0.007614   1st Qu.:0.2624  
+ Median :0.5301   Median :0.3944   Median :0.008214   Median :0.2859  
+ Mean   :0.5303   Mean   :0.3992   Mean   :0.009288   Mean   :0.3043  
+ 3rd Qu.:0.5309   3rd Qu.:0.4178   3rd Qu.:0.010425   3rd Qu.:0.3370  
+ Max.   :0.5317   Max.   :0.4412   Max.   :0.012636   Max.   :0.3881  
+    skewness        kurtosis          p00              p01        
+ Min.   :2.872   Min.   :12.30   Min.   :0.0946   Min.   :0.1272  
+ 1st Qu.:2.993   1st Qu.:13.12   1st Qu.:0.0946   1st Qu.:0.1384  
+ Median :3.113   Median :13.94   Median :0.0946   Median :0.1496  
+ Mean   :3.092   Mean   :13.65   Mean   :0.1105   Mean   :0.1573  
+ 3rd Qu.:3.201   3rd Qu.:14.32   3rd Qu.:0.1185   3rd Qu.:0.1723  
+ Max.   :3.289   Max.   :14.71   Max.   :0.1423   Max.   :0.1950  
+      p05              p10              p20              p25        
+ Min.   :0.1701   Min.   :0.2023   Min.   :0.2467   Min.   :0.2635  
+ 1st Qu.:0.1874   1st Qu.:0.2221   1st Qu.:0.2667   1st Qu.:0.2858  
+ Median :0.2047   Median :0.2419   Median :0.2867   Median :0.3082  
+ Mean   :0.2068   Mean   :0.2392   Mean   :0.2829   Mean   :0.3029  
+ 3rd Qu.:0.2252   3rd Qu.:0.2576   3rd Qu.:0.3010   3rd Qu.:0.3227  
+ Max.   :0.2456   Max.   :0.2733   Max.   :0.3154   Max.   :0.3371  
+      p30              p40              p50              p60        
+ Min.   :0.2814   Min.   :0.3234   Min.   :0.3768   Min.   :0.4463  
+ 1st Qu.:0.3056   1st Qu.:0.3452   1st Qu.:0.3931   1st Qu.:0.4550  
+ Median :0.3298   Median :0.3669   Median :0.4093   Median :0.4636  
+ Mean   :0.3217   Mean   :0.3575   Mean   :0.4022   Mean   :0.4596  
+ 3rd Qu.:0.3418   3rd Qu.:0.3745   3rd Qu.:0.4148   3rd Qu.:0.4663  
+ Max.   :0.3538   Max.   :0.3822   Max.   :0.4204   Max.   :0.4690  
+      p70              p75              p80              p90        
+ Min.   :0.5259   Min.   :0.5760   Min.   :0.6357   Min.   :0.8836  
+ 1st Qu.:0.5319   1st Qu.:0.5851   1st Qu.:0.6522   1st Qu.:0.9174  
+ Median :0.5380   Median :0.5941   Median :0.6686   Median :0.9512  
+ Mean   :0.5424   Mean   :0.6072   Mean   :0.6887   Mean   :0.9540  
+ 3rd Qu.:0.5507   3rd Qu.:0.6228   3rd Qu.:0.7152   3rd Qu.:0.9891  
+ Max.   :0.5634   Max.   :0.6516   Max.   :0.7619   Max.   :1.0270  
+      p95             p99             p100      
+ Min.   :1.201   Min.   :2.140   Min.   :3.422  
+ 1st Qu.:1.245   1st Qu.:2.143   1st Qu.:3.609  
+ Median :1.289   Median :2.147   Median :3.797  
+ Mean   :1.287   Mean   :2.154   Mean   :3.672  
+ 3rd Qu.:1.331   3rd Qu.:2.162   3rd Qu.:3.797  
+ Max.   :1.372   Max.   :2.177   Max.   :3.797  </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(cat_num) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="categorical-target-variables-categorical-variable-of-interest" class="level3">
+<h3 class="anchored" data-anchor-id="categorical-target-variables-categorical-variable-of-interest"><strong>Categorical Target Variables: Categorical Variable of Interest</strong></h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The categorical predictor variable that we want</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>categ <span class="ot">&lt;-</span> <span class="fu">target_by</span>(artists, artist_gender)</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Relating the variable of interest to the categorical target variable</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>cat_cat <span class="ot">&lt;-</span> <span class="fu">relate</span>(categ, book)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Summary of the Chi-square test for Independence</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(cat_cat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call: xtabs(formula = formula_str, data = data, addNA = TRUE)
+Number of cases in table: 3162 
+Number of factors: 2 
+Test for independence of all factors:
+    Chisq = 39.17, df = 2, p-value = 3.121e-09</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(cat_cat)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="hw-02-03_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
